@@ -1,3 +1,7 @@
+package(default_visibility = ["//visibility:public"])
+
+exports_files(glob(["*.bzl"]))
+
 load("@subpar//:subpar.bzl", "par_binary")
 
 par_binary(

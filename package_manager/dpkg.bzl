@@ -3,11 +3,23 @@ def _dpkg_list_impl(repository_ctx):
 package(default_visibility = ["//visibility:public"])
 deb_files = glob(["*.deb"])
 exports_files(deb_files + ["packages.bzl"])
+
+load(":packages.bzl", "packages")
+
+[filegroup(
+    name = name,
+    srcs = [src],
+) for name, src in packages.items()]
+
+filegroup(
+    name = "all",
+    srcs = packages.values(),
+)
 """)
 
     args = [
         # dpkg_parser.par must be built separately beforehand (bazel build ... //package_manager:dpkg_parser.par)
-        str(repository_ctx.path(Label("//:WORKSPACE")).dirname) + "/bazel-bin/package_manager/dpkg_parser.par",
+        repository_ctx.path(repository_ctx.attr.dpkg_parser),
         "--package-files",
         ",".join([str(repository_ctx.path(src_path)) for src_path in repository_ctx.attr.sources]),
         "--packages",
@@ -29,6 +41,11 @@ _dpkg_list = repository_rule(
             allow_files = True,
         ),
         "packages": attr.string_list(),
+        "dpkg_parser": attr.label(
+            executable = True,
+            default = Label("//package_manager:dpkg_parser.par"),
+            cfg = "host",
+        ),
     },
 )
 
@@ -39,7 +56,7 @@ exports_files(["Packages.json", "os_release.tar"])
 """)
     args = [
         # dpkg_parser.par must be built separately beforehand (bazel build ... //package_manager:dpkg_parser.par)
-        str(repository_ctx.path(Label("//:WORKSPACE")).dirname) + "/bazel-bin/package_manager/dpkg_parser.par",
+        repository_ctx.path(repository_ctx.attr.dpkg_parser),
         "--download-and-extract-only=True",
         "--mirror-url=" + repository_ctx.attr.url,
         "--arch=" + repository_ctx.attr.arch,
@@ -64,6 +81,11 @@ _dpkg_src = repository_rule(
         "packages_gz_url": attr.string(),
         "package_prefix": attr.string(),
         "sha256": attr.string(),
+        "dpkg_parser": attr.label(
+            executable = True,
+            default = Label("//package_manager:dpkg_parser.par"),
+            cfg = "host",
+        ),
     },
 )
 
